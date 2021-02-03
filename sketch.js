@@ -1,72 +1,134 @@
-//Create variables here
-var dog, happyDog;
-var dogIMG, happyDogIMG;
+var dog,dogImg;
+var happyDog,happyDogImg;
 var database;
-var foodS, foodStock;
+var foodS;
+var foodStock;
+
+var lastFed;
+var foodObj;
+var fedTime;
+var addFood;
+var feed;
+var backImg;
 
 
-//load images here
-function preload(){
-  dogIMG = loadImage("images/dogImg.png")
-  happyDogIMG = loadImage("images/dogImg1.png")
+function preload()
+{
+  dogImg=loadImage("dogImg.png")
+  happyDogImg =loadImage("dogImg1.png")
+  backImg = loadImage("backImg.jpg")
+  
 }
 
 function setup() {
-  createCanvas(500, 500);
+
+  createCanvas(660, 500);
   database = firebase.database();
+ 
   
-  dog = createSprite(250,250,20,20);
-  dog.addImage(dogIMG);
-  dog.scale=0.1;
+  dog = createSprite(250,300,150,150);
+  dog.addImage(dogImg)
+  dog.scale=0.15;
+  
+   foodStock=database.ref('Food');
+  foodStock.on("value",readStock);
+  foodObj = new Food();
+  // textSize(20)
 
-  happyDog = createSprite(250,250,20,20);
-  happyDog.addImage(happyDogIMG);
-  happyDog.scale=0.1;
-  happyDog.visible=false;
+  feed=createButton("Feed the dog")
+  feed.position(500,95)
+  feed.mousePressed(feedDog);
+    
+  
 
-  foodStock=database.ref('Food');
-  foodStock.on("value", readStock); 
+  addFood= createButton("Add Food");
+  addFood.position(600,95);
+  addFood.mousePressed(addFoods);
+
+  fedTime=database.ref("FeedTime");
+  fedTime.on("value",function(data){
+    lastFed=data.val();
+  });
+
+
 }
 
 
 function draw() {  
-  background(46,139,87);
+  background(backImg);
+  fill("yellow")
+  strokeWeight(4)
+  stroke("red")
+  textFont("Bold")
+  textSize(20)
 
-  if(keyWentDown(UP_ARROW)){
-    writeStock(foodS);
-    dog.visible=false;
-    happyDog.visible=true;
-  }
+//   if(keyWentDown(UP_ARROW))
+//   {
+// writeStock(foodS)
+// dog.addImage(dogHappy);
+//   }
+
+if(lastFed>=12){
+  text("Last Feed :"+ lastFed%14+"PM",350,63);
+
+}else if(lastFed==0){
+  text("Last Feed : 5AM", 415,63)
+}else{
+  text("Last Feed :" +lastFed %11+ "AM", 415,63);
+}
+
+foodObj.display();
+
 
   drawSprites();
   //add styles here
-  textSize(21);
-  stroke("black");
-  fill("black");
-  text("Food Remaining : "+foodS, 155, 350);
 
-  textSize(18);
-  stroke("black");
-  fill("white");
-  text("NOTE: Press UP Arrow Key to feed milk to Cooper", 50, 20);
+  fill("yellow");
+  strokeWeight(4);
+  stroke("red");
+  text("Food Remaining : "+foodS,170,380);
+  textSize(20);
+  text("Note: Press the Buttons To Feed Drago Milk!!",90,10,500,500)
+ 
+
+  // fill("yellow")
+  // text(mouseX+","+mouseY,mouseX,mouseY)
 }
 
-//Function to read values from DB
-function readStock(data) {
+function readStock(data){
   foodS=data.val();
+  foodObj.updateFoodStock(foodS);
 }
 
-//Function to write values in DB
-function writeStock(x) {
+// function writeStock(x){
 
-  if(x<=0){
-    x=0;
-  }
-  else{
-    x=x-1;
-  }
+  // if(x<=0){
+  //   x=0;
+  //   }else{
+  //     x=x-1;
+  //   }
 
+//   database.ref('/').update({
+//     Food:x
+//   })
+// }
+function feedDog(){
+  dog.addImage(happyDogImg);
+
+  foodObj.updateFoodStock(foodObj.getFoodStock()-1);
   database.ref('/').update({
-    Food:x
+    Food:foodObj.getFoodStock(),
+    FeedTime:hour(2)
+  
   })
 }
+
+function addFoods(){
+  foodS++;
+
+  database.ref('/').update({
+    Food:foodS
+    
+  })
+}
+
